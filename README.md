@@ -1,5 +1,5 @@
 ## 🚀 Live Demo  
-🔗 **[Try the App Here](https://your-streamlit-app-url.com)**
+🔗 **[Try the App Here]([https://your-streamlit-app-url.com](https://tajweed-comparision.streamlit.app/))**
 
 ## 📌 Features  
 ✅ Upload two image of Quranic page  (first image= correct image , Second image= compares image)            
