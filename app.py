@@ -155,7 +155,7 @@ box_colors = {
 # --------------------------
 # Streamlit App
 # --------------------------
-st.title("Tajweed Mark Comparison Web App")
+st.title("Tajweed Mark Comparison")
 
 st.write("""
 Upload the **Correct Image** and the **Compared Image**.
