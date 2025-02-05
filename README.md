@@ -13,16 +13,19 @@
 ✅ User-friendly web interface  
 
 
-**Guides**
+## **Guides**
 
-**Install liberaries**
+## **Install liberaries**
+
 pip install opencv-python  
 pip install opencv-python-headless
 pip install streamlit
 pip install -r requirements.txt    
 
-**Set PAth**
+## **Set PAth**
+
 export PATH=$HOME/.local/bin:$PATH
 
-**Run App**
+## **Run App**
+
 streamlit run app.py 
