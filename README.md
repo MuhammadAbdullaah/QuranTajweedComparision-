@@ -18,8 +18,11 @@
 ## **Install liberaries**
 
 pip install opencv-python  
+
 pip install opencv-python-headless
+
 pip install streamlit
+
 pip install -r requirements.txt    
 
 ## **Set PAth**
