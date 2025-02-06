@@ -64,26 +64,26 @@ def compare_line_data(data1, data2):
         line_no, seq1 = data1[i]
         _, seq2 = data2[i]
         if seq1 == seq2:
-            issues = "No issues"
+            issues = "Looks good"
         else:
             issues_list = []
             len1, len2 = len(seq1), len(seq2)
             min_len = min(len1, len2)
             for j in range(min_len):
                 if seq1[j] != seq2[j]:
-                    issues_list.append(f"Position {j+1}: expected {seq1[j]}, found {seq2[j]}")
+                    issues_list.append(f"Color Position {j+1}: expected {seq1[j]}, found {seq2[j]}")
             if len1 > len2:
                 extra = seq1[len2:]
-                issues_list.append(f"Missing in compared image: {extra}")
+                issues_list.append(f"Missing colors in APP image: {extra}")
             elif len2 > len1:
                 extra = seq2[len1:]
-                issues_list.append(f"Extra in compared image: {extra}")
+                issues_list.append(f"Found extra colors in APP image: {extra}")
             issues = "; ".join(issues_list)
         comparison_results.append((line_no, seq1, seq2, issues))
     return comparison_results
 
 def create_csv_data(comparison_results):
-    csv_lines = [["Line Number", "Image1 Tajweed Colors", "Image2 Tajweed Colors", "Issues"]]
+    csv_lines = [["Line Number", "Mushaf Tajweed Colors", "App Tajweed Colors", "Issues"]]
     for line_no, seq1, seq2, issues in comparison_results:
         csv_lines.append([line_no, ",".join(seq1), ",".join(seq2), issues])
     return csv_lines
@@ -109,13 +109,13 @@ def save_image_to_temp(image):
     temp_file.close()
     return temp_file.name
 
-def process_directory_pair(dir1_path, dir2_path, color_ranges, box_colors):
+def process_directory_pair(mushaf_directory, app_directory, color_ranges, box_colors):
     all_comparisons = []
     all_combined_images = []
     
     # Get sorted list of image files in directories
-    dir1_files = sorted([f for f in os.listdir(dir1_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
-    dir2_files = sorted([f for f in os.listdir(dir2_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
+    dir1_files = sorted([f for f in os.listdir(mushaf_directory) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
+    dir2_files = sorted([f for f in os.listdir(app_directory) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
     
     if len(dir1_files) != len(dir2_files):
         st.error("Error: Both directories must contain the same number of images!")
@@ -123,8 +123,8 @@ def process_directory_pair(dir1_path, dir2_path, color_ranges, box_colors):
     
     for page_idx, (file1, file2) in enumerate(zip(dir1_files, dir2_files)):
         # Load images
-        image1 = cv2.imread(os.path.join(dir1_path, file1))
-        image2 = cv2.imread(os.path.join(dir2_path, file2))
+        image1 = cv2.imread(os.path.join(mushaf_directory, file1))
+        image2 = cv2.imread(os.path.join(app_directory, file2))
         if image1 is None or image2 is None:
             st.error(f"Error loading images: {file1} or {file2}")
             continue
@@ -215,10 +215,10 @@ if mode == "Single Image Pair":
             st.subheader("Uploaded Images")
             col1, col2 = st.columns(2)
             with col1:
-                st.image(image1, caption="Correct Image", use_column_width=True)
+                st.image(image1, caption="Correct Image", use_container_width=True)
             with col2:
-                st.image(image2, caption="Compared Image", use_column_width=True)
-                
+                st.image(image2, caption="Compared Image", use_container_width=True)
+
             if st.button("Process Images"):
                 line_data1, marked_image1 = process_image(image1, color_ranges, box_colors)
                 line_data2, marked_image2 = process_image(image2, color_ranges, box_colors)
@@ -247,22 +247,22 @@ if mode == "Single Image Pair":
 
 else:
     st.header("Directory Comparison")
-    dir1_path = st.text_input("Enter Path to Reference Directory:")
-    dir2_path = st.text_input("Enter Path to Comparison Directory:")
+    mushaf_directory = st.text_input("Enter Path to Reference Directory:", value="./sample/mushaf/")
+    app_directory = st.text_input("Enter Path to Comparison Directory:", value="./sample/app/")
 
-    if dir1_path and dir2_path:
+    if mushaf_directory and app_directory:
         if st.button("Process Directories"):
-            if not os.path.exists(dir1_path) or not os.path.exists(dir2_path):
+            if not os.path.exists(mushaf_directory) or not os.path.exists(app_directory):
                 st.error("Error: One or both directories do not exist!")
             else:
                 with st.spinner("Processing directories..."):
-                    all_comparisons, all_combined_images = process_directory_pair(dir1_path, dir2_path, color_ranges, box_colors)
+                    all_comparisons, all_combined_images = process_directory_pair(mushaf_directory, app_directory, color_ranges, box_colors)
                     
                     if all_comparisons and all_combined_images:
                         st.success("Processing completed!")
                         
                         # CSV Download
-                        csv_data = [["Page", "Line", "Reference", "Comparison", "Issues"]]
+                        csv_data = [["Page", "Line", "Mushaf", "App", "Issues"]]
                         csv_data.extend(all_comparisons)
                         csv_path = save_csv_to_temp(csv_data)
                         with open(csv_path, "rb") as f:
@@ -273,11 +273,20 @@ else:
                         st.download_button("Download All Images as ZIP", zip_buffer, file_name="comparison_images.zip", mime="application/zip")
                         
                         # Grid Display
-                        st.subheader("Page Comparisons")
+                        st.subheader("Page Comparison Results")
                         images_per_row = 4
                         for row_start in range(0, len(all_combined_images), images_per_row):
                             cols = st.columns(images_per_row)
                             row_images = all_combined_images[row_start:row_start+images_per_row]
                             for col_idx, (page_num, image) in enumerate(row_images):
+                                page_has_issue = any([line[4] != "Looks good" for line in all_comparisons if line[0] == page_num])
+
+                                # Detect the lines that has issues and print those lines
                                 with cols[col_idx]:
-                                    st.image(image, caption=f"Page {page_num}", use_column_width=True)
+                                    st.image(image, caption=f"Page {page_num}", use_container_width=True)
+                                    if page_has_issue:
+                                        lines_with_issues = [str(line[1]) for line in all_comparisons if line[0] == page_num and line[4] != "Looks good"]
+                                        combined_lines = ", ".join(lines_with_issues)
+
+                                        st.write("Page has issues", unsafe_allow_html=True)
+                                        st.write(combined_lines, unsafe_allow_html=True)
