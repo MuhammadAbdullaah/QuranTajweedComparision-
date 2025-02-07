@@ -8,7 +8,11 @@
 
 ✅ Identify missing ,extra and different tajweed colors 
 
-✅ Compare tajweed and make csv file & identify the issues 
+✅ Compare tajweed and make csv file & identify the issues
+
+✅ crop_images.py: This file croping header(250) & footer(260)
+
+✅ remove_black_clr.py: This file remove black color with neigbours 
 
 ✅ User-friendly web interface  
 
