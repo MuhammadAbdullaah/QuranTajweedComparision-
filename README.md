@@ -2,9 +2,13 @@
 🔗 **[Try the App Here](https://tajweed-comparision.streamlit.app/)**
 
 ## 📌 Features  
-✅ Upload two image of Quranic page  (first image= correct image , Second image= compares image)            
+✅ Give to dir path and process      
+
+✅ Yoy set range alse for processing   
 
 ✅ make sure give the input proper crop image
+
+✅ make sure arrange data in dir like 1.png, 2.png . .. .. . .
 
 ✅ Identify missing ,extra and different tajweed colors 
 
