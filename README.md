@@ -1,5 +1,5 @@
 ## 🚀 Live Demo  
-🔗 **[Try the App Here](https://tajweed-comparision.streamlit.app/)**
+🔗 **[Not available](https://tajweed-comparision.streamlit.app/)**
 
 ## 📌 Features  
 ✅ Give to dir path and process      
