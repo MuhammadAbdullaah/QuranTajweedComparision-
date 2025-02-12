@@ -3,8 +3,8 @@ import os
 
 from utils.image_processing import natural_key
 from utils.comparison import create_csv_data
-from utils.file_handling import save_csv_to_temp, save_image_to_temp, create_zip, create_split_lines_zip
-from utils.directory_processing import process_directory_pair, get_split_lines_dict
+from utils.file_handling import save_csv_to_temp, save_image_to_temp, create_zip, create_split_lines_zip_for_both
+from utils.directory_processing import process_directory_pair, get_split_lines_dict_for_both
 
 # --------------------------
 # Color Configuration
@@ -126,8 +126,12 @@ if mushaf_directory and app_directory:
                                 st.write(combined_lines, unsafe_allow_html=True)
 
     # New functionality: Download Split Lines Zip
-    if st.button("Split into Lines"):
-        from utils.directory_processing import get_split_lines_dict
-        split_lines_dict = get_split_lines_dict(mushaf_directory, start_page, end_page)
-        split_zip = create_split_lines_zip(split_lines_dict)
-        st.download_button("Click to Download Split Lines Zip", split_zip, file_name="split_lines.zip", mime="application/zip")
+    if st.button("Download Split Lines Zip"):
+        try:
+            mushaf_split_dict, app_split_dict = get_split_lines_dict_for_both(
+                mushaf_directory, app_directory, start_page, end_page
+            )
+            split_zip = create_split_lines_zip_for_both(mushaf_split_dict, app_split_dict)
+            st.download_button("Download Split Lines Zip", split_zip, file_name="split_lines.zip", mime="application/zip")
+        except  Exception as e:
+            st.error(f"Error in generating split lines zip: {e}")

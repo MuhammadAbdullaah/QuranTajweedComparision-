@@ -13,7 +13,6 @@ def convert_to_hsv(image):
     return cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
 
 def natural_key(filename):
-    # Extract numerical part from the filename for natural sorting.
     match = re.search(r'\d+', filename)
     return int(match.group()) if match else float('inf')
 
@@ -95,9 +94,6 @@ def combine_three_images(image_left, image_center, image_right):
     return np.concatenate((image_left, image_center, image_right), axis=1)
 
 def create_issue_image_from_boxes(app_image, boxes_data, comparison_results):
-    """
-    Reverts to the original logic: marks extra occurrences on the app image using red rectangles.
-    """
     issue_image = app_image.copy()
     from collections import Counter
     for line_result in comparison_results:
