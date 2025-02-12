@@ -28,19 +28,27 @@ def create_zip(combined_images):
     zip_buffer.seek(0)
     return zip_buffer
 
-def create_split_lines_zip(split_lines_dict):
+def create_split_lines_zip_for_both(mushaf_split_dict, app_split_dict):
     """
-    Given a dictionary mapping page numbers to a list of line images,
-    creates a ZIP archive where each page gets its own folder containing
-    line_1.png, line_2.png, … etc.
+    Mushaf aur App directories ke split lines ke dictionaries ko le kar ek ZIP archive create karta hai.
+    ZIP mein do folders honge: "mushaf" aur "app". Har folder mein, har page ke liye ek sub-folder (e.g., page_10)
+    hoga jismein us page ki horizontal lines ke images (line_1.png, line_2.png, ... line_15.png) stored honge.
     """
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-        for page_no, lines in split_lines_dict.items():
+        # Process mushaf split lines
+        for page_no, lines in mushaf_split_dict.items():
             for i, line_img in enumerate(lines, start=1):
                 img_bytes = BytesIO()
                 plt.imsave(img_bytes, line_img, format="png")
-                file_path = f"page_{page_no}/line_{i}.png"
+                file_path = f"mushaf/page_{page_no}/line_{i}.png"
+                zip_file.writestr(file_path, img_bytes.getvalue())
+        # Process app split lines
+        for page_no, lines in app_split_dict.items():
+            for i, line_img in enumerate(lines, start=1):
+                img_bytes = BytesIO()
+                plt.imsave(img_bytes, line_img, format="png")
+                file_path = f"app/page_{page_no}/line_{i}.png"
                 zip_file.writestr(file_path, img_bytes.getvalue())
     zip_buffer.seek(0)
     return zip_buffer
