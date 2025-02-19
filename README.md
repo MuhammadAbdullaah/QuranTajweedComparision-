@@ -1,10 +1,12 @@
 ## 🚀 Live Demo  
-🔗 **[Try the App Here](https://tajweed-comparision.streamlit.app/)**
+🔗 **[Not available](https://tajweed-comparision.streamlit.app/)**
 
 ## 📌 Features  
-✅ Give to dir path and process      
+✅ Give two dir path and process      
 
-✅ Yoy set range alse for processing   
+✅ Also you split all pages into lines     
+
+✅ You set range also for processing   
 
 ✅ make sure give the input proper crop image
 
