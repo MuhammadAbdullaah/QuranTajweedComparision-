@@ -10,7 +10,7 @@ from utils.directory_processing import process_directory_pair, get_split_lines_d
 # Color Configuration
 # --------------------------
 color_ranges = {
-    "red": ((0, 100, 100), (10, 255, 255)),
+    # "red": ((0, 100, 100), (10, 255, 255)),
     "blue": ((90, 50, 50), (130, 255, 255)),
     "green": ((35, 50, 50), (85, 255, 255)),
     "orange": ((10, 100, 100), (25, 255, 255)),
@@ -21,7 +21,7 @@ color_ranges = {
 }
 
 box_colors = {
-    "red": (255, 0, 0),
+    # "red": (255, 0, 0),
     "blue": (0, 102, 148),
     "green": (0, 255, 0),
     "orange": (255, 165, 0),
