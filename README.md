@@ -35,4 +35,4 @@ export PATH=$HOME/.local/bin:$PATH
 
 ## **Run App**
 
-streamlit run app.py 
+streamlit run mian.py 
