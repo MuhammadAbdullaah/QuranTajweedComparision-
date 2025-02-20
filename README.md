@@ -1,6 +1,8 @@
 ## 🚀 Live Demo  
 🔗 **[Not available](https://tajweed-comparision.streamlit.app/)**
 
+# smart line spliting added for the mushaf images
+
 ## 📌 Features  
 ✅ Give two dir path and process      
 
