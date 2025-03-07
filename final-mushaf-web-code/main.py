@@ -2,10 +2,11 @@ import streamlit as st
 import os
 import cv2
 import numpy as np
+import time
 
 from utils.image_processing import natural_key
 from utils.comparison import create_csv_data
-from utils.file_handling import save_csv_to_temp, save_image_to_temp, create_zip, create_split_lines_zip_for_both
+from utils.file_handling import save_csv_to_temp, create_zip, create_split_lines_zip_for_both
 from utils.directory_processing import process_directory_pair, get_split_lines_dict_for_both
 
 # --------------------------
@@ -37,7 +38,7 @@ box_colors = {
 # App Configuration
 # --------------------------
 st.set_page_config(layout="wide", page_title="Tajweed Comparison")
-st.title("Tajweed Mark Comparison Web App - Directory Pair Mode (With Ignore CSV)")
+st.title("Tajweed Mark Comparison Web App - Real-Time Display (With Ignore CSV)")
 
 st.header("Directory Comparison Settings")
 mushaf_directory = st.text_input("Reference Directory (Mushaf):", value="./sample/mushaf-604/")
@@ -57,116 +58,168 @@ else:
     end_page = None
 
 # --------------------------
-# Session State Management
+# Containers for Real-Time Display and Progress
 # --------------------------
-if "last_params" not in st.session_state:
-    st.session_state.last_params = {
-        "mushaf_directory": mushaf_directory,
-        "app_directory": app_directory,
-        "csv_path_for_mushaf": csv_path_for_mushaf,
-        "ignore_csv_path": ignore_csv_path,
-        "range_option": range_option,
-        "start_page": start_page,
-        "end_page": end_page
-    }
-else:
-    if (st.session_state.last_params.get("mushaf_directory") != mushaf_directory or
-        st.session_state.last_params.get("app_directory") != app_directory or
-        st.session_state.last_params.get("csv_path_for_mushaf") != csv_path_for_mushaf or
-        st.session_state.last_params.get("ignore_csv_path") != ignore_csv_path or
-        st.session_state.last_params.get("range_option") != range_option or
-        st.session_state.last_params.get("start_page") != start_page or
-        st.session_state.last_params.get("end_page") != end_page):
-        st.session_state.dir_processed = None
-        st.session_state.last_params = {
-            "mushaf_directory": mushaf_directory,
-            "app_directory": app_directory,
-            "csv_path_for_mushaf": csv_path_for_mushaf,
-            "ignore_csv_path": ignore_csv_path,
-            "range_option": range_option,
-            "start_page": start_page,
-            "end_page": end_page
-        }
+grid_container = st.empty()
+progress_container = st.empty()
 
-if "dir_processed" not in st.session_state:
-    st.session_state.dir_processed = None
+all_comparisons = []
+all_combined_images = []
+all_issue_csv = []
 
-# --------------------------
-# Directory Processing & UI Display
-# --------------------------
-if mushaf_directory and app_directory and csv_path_for_mushaf:
-    if st.button("Process Directories") or st.session_state.dir_processed is not None:
-        if not os.path.exists(mushaf_directory) or not os.path.exists(app_directory):
-            st.error("Error: One or both directories do not exist!")
-        elif not os.path.exists(csv_path_for_mushaf):
-            st.error("Error: Mushaf CSV path does not exist!")
-        else:
-            with st.spinner("Processing directories..."):
-                if st.session_state.dir_processed is None:
-                    all_comparisons, all_combined_images, issue_csv_data = process_directory_pair(
-                        mushaf_directory,
-                        app_directory,
-                        color_ranges,
-                        box_colors,
-                        start_page,
-                        end_page,
-                        num_lines=15,
-                        csv_path_for_mushaf=csv_path_for_mushaf,
-                        ignore_csv_path=ignore_csv_path
-                    )
-                    st.session_state.dir_processed = {
-                        "all_comparisons": all_comparisons,
-                        "all_combined_images": all_combined_images,
-                        "issue_csv_data": issue_csv_data
-                    }
-                results = st.session_state.dir_processed
+composite_images = []
 
-            pages_with_issues = set(row[0] for row in results["issue_csv_data"])
-            filtered_comparisons = [row for row in results["all_comparisons"] if row[0] in pages_with_issues]
-            filtered_images = [(pg, img) for (pg, img) in results["all_combined_images"] if pg in pages_with_issues]
-            filtered_issue_csv = [row for row in results["issue_csv_data"] if row[0] in pages_with_issues]
+progress_container.text("Starting processing...")
 
-            if filtered_comparisons and filtered_images:
-                st.success("Processing completed!")
-                
-                csv_data = [["Page", "Line", "Mushaf Sequence", "App Sequence", "Issues"]]
-                csv_data.extend(filtered_comparisons)
-                csv_path = save_csv_to_temp(csv_data)
-                with open(csv_path, "rb") as f:
-                    st.download_button("Download Full Report CSV", f, file_name="full_comparison.csv", mime="text/csv")
-                
-                issue_csv = [["Page", "Line", "Issues"]]
-                issue_csv.extend(filtered_issue_csv)
-                issue_csv_path = save_csv_to_temp(issue_csv)
-                with open(issue_csv_path, "rb") as f:
-                    st.download_button("Download Issues Report CSV", f, file_name="issues_report.csv", mime="text/csv")
-                
-                zip_buffer = create_zip(filtered_images)
-                st.download_button("Download All Images as ZIP", zip_buffer, file_name="comparison_images.zip", mime="application/zip")
-                
-                st.subheader("Page Comparison Results (Only Pages with Issues)")
-                images_per_row = 4
-                for row_start in range(0, len(filtered_images), images_per_row):
-                    cols = st.columns(images_per_row)
-                    row_images = filtered_images[row_start:row_start+images_per_row]
-                    for col_idx, (page_no, image) in enumerate(row_images):
-                        
-                        lines_with_issue_nums = sorted(set(str(row[1]) for row in filtered_issue_csv if row[0] == page_no))
-                        header_summary = "Lines with issues: " + ", ".join(lines_with_issue_nums)
-                        detail_summary_lines = []
-                        for row in filtered_issue_csv:
-                            if row[0] == page_no:
-                                detail_summary_lines.append(f"Line {row[1]}: {row[2].strip()}")
-                        detail_summary = "<br>".join(detail_summary_lines)
-                        caption = f"<b>Page {page_no}</b><br>{header_summary}<br>{detail_summary}"
-                        with cols[col_idx]:
-                            st.markdown("<div style='margin: 10px;'>", unsafe_allow_html=True)
-                            st.image(image, caption=None, use_container_width=True)
-                            st.markdown(caption, unsafe_allow_html=True)
-                            st.markdown("</div>", unsafe_allow_html=True)
-            else:
-                st.info("No issues found. Only pages with issues will be displayed and downloaded.")
+mushaf_files = sorted(
+    [f for f in os.listdir(mushaf_directory) if f.lower().endswith(('.png','.jpg','.jpeg'))],
+    key=natural_key
+)
+app_files = sorted(
+    [f for f in os.listdir(app_directory) if f.lower().endswith(('.png','.jpg','.jpeg'))],
+    key=natural_key
+)
 
+if start_page and end_page:
+    def filter_by_range(files):
+        filtered = []
+        for f in files:
+            match = re.search(r'\d+', f)
+            if match:
+                num = int(match.group())
+                if start_page <= num <= end_page:
+                    filtered.append(f)
+        return filtered
+    mushaf_files = filter_by_range(mushaf_files)
+    app_files = filter_by_range(app_files)
+
+if len(mushaf_files) != len(app_files):
+    st.error("Both directories must contain the same number of images!")
+    st.stop()
+
+from utils.directory_processing import load_mushaf_line_heights, load_ignore_csv
+mushaf_heights = load_mushaf_line_heights(csv_path_for_mushaf)
+ignore_dict = {}
+if ignore_csv_path and os.path.exists(ignore_csv_path):
+    ignore_dict = load_ignore_csv(ignore_csv_path)
+
+for file1, file2 in zip(mushaf_files, app_files):
+    page_no = natural_key(file1)
+    mushaf_path = os.path.join(mushaf_directory, file1)
+    app_path = os.path.join(app_directory, file2)
+    
+    mushaf_img = cv2.imread(mushaf_path)
+    app_img = cv2.imread(app_path)
+    if mushaf_img is None or app_img is None:
+        continue
+    mushaf_img = cv2.cvtColor(mushaf_img, cv2.COLOR_BGR2RGB)
+    app_img = cv2.cvtColor(app_img, cv2.COLOR_BGR2RGB)
+    
+    heights_arr = mushaf_heights.get(page_no, [])
+    if not heights_arr:
+        continue  
+    if len(heights_arr) < 15:
+        needed = 15 - len(heights_arr)
+        avg = int(np.mean(heights_arr)) if heights_arr else 50
+        heights_arr += [avg] * needed
+    elif len(heights_arr) > 15:
+        heights_arr = heights_arr[:15]
+    
+    H = mushaf_img.shape[0]
+    csum = np.cumsum(heights_arr)
+    if csum[-1] < H:
+        csum[-1] = H
+    else:
+        csum = [min(x, H) for x in csum]
+    
+    mushaf_line_data = []
+    mushaf_boxes_data = []
+    marked_segments = []
+    segment_heights = []
+    prev = 0
+    line_idx = 1
+    raw_line_segments = {}
+    for boundary in csum:
+        top = prev
+        bottom = boundary
+        if bottom <= top:
+            continue
+        segment = mushaf_img[top:bottom, :].copy()
+        raw_line_segments[line_idx] = segment
+        seq, seg_marked, boxes_line = __import__('utils.image_processing').process_line_segment(segment, color_ranges, box_colors)
+        mushaf_line_data.append((line_idx, seq))
+
+        shifted_boxes = [(x, y+top, w, h, c) for (x, y, w, h, c) in boxes_line]
+        mushaf_boxes_data.append((line_idx, shifted_boxes))
+        marked_segments.append(seg_marked)
+        segment_heights.append(segment.shape[0])
+        line_idx += 1
+        prev = bottom
+    if marked_segments:
+        final_mushaf_marked = np.vstack(marked_segments)
+    else:
+        final_mushaf_marked = mushaf_img.copy()
+    
+    app_line_data, marked_app, app_boxes_data = __import__('utils.image_processing').process_image(app_img, color_ranges, box_colors, num_lines=15)
+    
+    comp_results = compare_line_data(mushaf_line_data, app_line_data)
+    for res in comp_results:
+        all_comparisons.append([page_no, res[0], ",".join(res[1]), ",".join(res[2]), res[3]])
+    
+    issue_rows = create_issue_csv_data(page_no, comp_results, mushaf_boxes_data, app_boxes_data, ignore_issues_dict=ignore_dict)
+    all_issue_csv.extend(issue_rows)
+    
+    problem_lines = [line_no for (line_no, seq1, seq2, issues) in comp_results if issues != "Looks good"]
+    cum_heights = np.cumsum(segment_heights)
+    y_top = 0
+    for i, seg_height in enumerate(segment_heights, start=1):
+        y_bottom = cum_heights[i-1]
+        if i in problem_lines:
+            cv2.rectangle(final_mushaf_marked, (0, y_top), (final_mushaf_marked.shape[1]-1, y_top+seg_height-1), (255, 0, 0), 4)
+        y_top += seg_height
+    
+    issue_image = __import__('utils.image_processing').create_issue_image_from_boxes(app_img, app_boxes_data, comp_results, ignore_issues_dict=ignore_dict, page_no=page_no)
+    
+    composite = __import__('utils.image_processing').combine_three_images(final_mushaf_marked, issue_image, marked_app)
+    if any(row[0] == page_no for row in issue_rows):
+        all_combined_images.append((page_no, composite))
+        composite_images = [ (pg, img) for (pg, img) in all_combined_images ]
+        num_per_row = 4
+        grid_container.empty()
+        grid_rows = [composite_images[i:i+num_per_row] for i in range(0, len(composite_images), num_per_row)]
+        for row in grid_rows:
+            cols = st.columns(len(row))
+            for idx, (pg, comp_img) in enumerate(row):
+                issue_rows_page = [r for r in all_issue_csv if r[0] == pg]
+                line_nums = sorted(set(str(r[1]) for r in issue_rows_page))
+                header = "Lines with issues: " + ", ".join(line_nums)
+                details = "<br>".join([f"Line {r[1]}: {r[2].strip()}" for r in issue_rows_page])
+                caption = f"<b>Page {pg}</b><br>{header}<br>{details}"
+                cols[idx].markdown(f"<div style='margin: 10px;'>", unsafe_allow_html=True)
+                cols[idx].image(comp_img, caption=None, use_column_width=True)
+                cols[idx].markdown(caption, unsafe_allow_html=True)
+                cols[idx].markdown("</div>", unsafe_allow_html=True)
+    
+    progress_container.text(f"Processed page {page_no}.")
+    time.sleep(0.1) 
+
+progress_container.text("Processing completed.")
+
+# --- Final Download Buttons ---
+if all_combined_images:
+    full_csv = [["Page", "Line", "Mushaf Sequence", "App Sequence", "Issues"]]
+    full_csv.extend(all_comparisons)
+    full_csv_path = save_csv_to_temp(full_csv)
+    st.download_button("Download Full Report CSV", full_csv_path, file_name="full_comparison.csv", mime="text/csv")
+    
+    issues_csv = [["Page", "Line", "Issues"]]
+    issues_csv.extend(all_issue_csv)
+    issues_csv_path = save_csv_to_temp(issues_csv)
+    st.download_button("Download Issues Report CSV", issues_csv_path, file_name="issues_report.csv", mime="text/csv")
+    
+    zip_buf = create_zip(all_combined_images)
+    st.download_button("Download Composite Images ZIP", zip_buf, file_name="comparison_images.zip", mime="application/zip")
+    
     if st.button("Download Split Lines Zip"):
         try:
             mushaf_split_dict, app_split_dict = get_split_lines_dict_for_both(
