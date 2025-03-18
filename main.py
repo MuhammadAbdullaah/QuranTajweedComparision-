@@ -6,9 +6,7 @@ from utils.comparison import create_csv_data
 from utils.file_handling import save_csv_to_temp, save_image_to_temp, create_zip, create_split_lines_zip_for_both
 from utils.directory_processing import process_directory_pair, get_split_lines_dict_for_both
 
-# --------------------------
-# Color Configuration
-# --------------------------
+
 color_ranges = {
     "red": ((0, 100, 100), (10, 255, 255)),
     "blue": ((90, 50, 50), (130, 255, 255)),
@@ -31,9 +29,7 @@ box_colors = {
     "pink": (255, 20, 147),
 }
 
-# --------------------------
-# Streamlit App (Directory Pair Mode)
-# --------------------------
+
 st.set_page_config(layout="wide", page_title="Tajweed Comparison")
 st.title("Tajweed Mark Comparison Web App - Directory Pair Mode")
 
@@ -125,7 +121,6 @@ if mushaf_directory and app_directory:
                                 st.write("Page has issues", unsafe_allow_html=True)
                                 st.write(combined_lines, unsafe_allow_html=True)
 
-    # New functionality: Download Split Lines Zip
     if st.button("Download Split Lines Zip"):
         try:
             mushaf_split_dict, app_split_dict = get_split_lines_dict_for_both(
