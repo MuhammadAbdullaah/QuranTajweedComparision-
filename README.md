@@ -25,6 +25,8 @@
 
 ✅ crop_images.py: This file croping header(250) & footer(260)
 
+✅ remove_black_clr.py: This file remove black color with neigbours 
+
 ## **Guides**
 
 ## **Install liberaries**
