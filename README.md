@@ -27,6 +27,14 @@
 
 ✅ remove_black_clr.py: This file remove black color with neigbours 
 
+## **Guides**
+
+## **Install liberaries**
+
+pip install -r requirements.txt    
+
+## **Set PAth**
+
 
 export PATH=$HOME/.local/bin:$PATH
 
