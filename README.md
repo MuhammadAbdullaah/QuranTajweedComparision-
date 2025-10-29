@@ -1,5 +1,5 @@
 ## 🚀 Live Demo  
-🔗 **[Not available](https://tajweed-comparision.app/)**
+🔗 **[Not available](https://tajweed-comparision-streamlit.app/)**
 
 
 # other Repo For this task 
