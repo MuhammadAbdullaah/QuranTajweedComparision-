@@ -27,7 +27,7 @@
 
 ✅ remove_black_clr.py: This file remove black color with neigbours 
 
-## **Guides**
+## **Guide**
 
 ## **Install liberaries**
 
